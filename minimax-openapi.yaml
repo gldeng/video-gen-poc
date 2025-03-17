@@ -1,0 +1,1250 @@
+openapi: 3.0.0
+info:
+  title: MiniMax API
+  description: |
+    MiniMax API provides a suite of AI capabilities including text generation, 
+    image generation, speech synthesis, video generation, and music generation.
+  version: "1.0.0"
+  contact:
+    email: api@minimaxi.com
+
+servers:
+  - url: https://api.minimaxi.chat/v1
+    description: MiniMax API Server
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /text/chatcompletion_v2:
+    post:
+      summary: Chat Completion
+      description: Generate conversational responses using MiniMax language models
+      operationId: chatCompletion
+      tags:
+        - Text Model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatCompletionRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatCompletionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  
+  /image_generation:
+    post:
+      summary: Image Generation
+      description: Generate images based on text prompts
+      operationId: imageGeneration
+      tags:
+        - Image Model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageGenerationRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageGenerationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  
+  /video_generation:
+    post:
+      summary: Create Video Generation Task
+      description: Submit a task to generate a video from text or image
+      operationId: createVideoGenerationTask
+      tags:
+        - Video Model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VideoGenerationRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoGenerationTaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  
+  /query/video_generation:
+    get:
+      summary: Query Video Generation Status
+      description: Check the status of a video generation task
+      operationId: queryVideoGenerationStatus
+      tags:
+        - Video Model
+      parameters:
+        - name: task_id
+          in: query
+          description: The task ID to query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoGenerationStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  
+  /t2a_v2:
+    post:
+      summary: Text to Audio
+      description: Convert text to speech using various voices and settings
+      operationId: textToAudio
+      tags:
+        - Speech Model
+      parameters:
+        - name: GroupId
+          in: query
+          required: true
+          description: The group to which the user belongs
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/T2ARequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/T2AResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  
+  /t2a_async_v2:
+    post:
+      summary: Asynchronous Text to Audio
+      description: Convert large texts to speech asynchronously
+      operationId: asyncTextToAudio
+      tags:
+        - Speech Model
+      parameters:
+        - name: GroupId
+          in: query
+          required: true
+          description: The group to which the user belongs
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/T2AAsyncRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/T2AAsyncResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  
+  /query/t2a_async_query_v2:
+    get:
+      summary: Query Async T2A Status
+      description: Check the status of an asynchronous text-to-audio task
+      operationId: queryT2AStatus
+      tags:
+        - Speech Model
+      parameters:
+        - name: GroupId
+          in: query
+          required: true
+          description: The group to which the user belongs
+          schema:
+            type: string
+        - name: task_id
+          in: query
+          required: true
+          description: The ID of the task
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/T2AAsyncStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  
+  /files/upload:
+    post:
+      summary: Upload File
+      description: Upload a file to be used for voice cloning or other purposes
+      operationId: uploadFile
+      tags:
+        - Files
+      parameters:
+        - name: GroupId
+          in: query
+          required: true
+          description: The group to which the user belongs
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                purpose:
+                  type: string
+                  enum: [voice_clone, song, voice, instrumental]
+                  description: The purpose of the uploaded file
+                file:
+                  type: string
+                  format: binary
+                  description: The file to upload
+              required:
+                - purpose
+                - file
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  
+  /files/retrieve:
+    get:
+      summary: Retrieve File
+      description: Get information about a file and download URL
+      operationId: retrieveFile
+      tags:
+        - Files
+      parameters:
+        - name: GroupId
+          in: query
+          required: true
+          description: The group to which the user belongs
+          schema:
+            type: string
+        - name: file_id
+          in: query
+          required: true
+          description: The unique identifier of the file
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileRetrieveResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  
+  /voice_clone:
+    post:
+      summary: Voice Clone
+      description: Clone a voice from an uploaded audio file
+      operationId: voiceClone
+      tags:
+        - Speech Model
+      parameters:
+        - name: GroupId
+          in: query
+          required: true
+          description: The group to which the user belongs
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceCloneRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceCloneResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  
+  /music_upload:
+    post:
+      summary: Music Upload
+      description: Upload an audio file for music generation
+      operationId: musicUpload
+      tags:
+        - Music Model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MusicUploadRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MusicUploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  
+  /music_generation:
+    post:
+      summary: Music Generation
+      description: Generate music using uploaded reference materials
+      operationId: musicGeneration
+      tags:
+        - Music Model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MusicGenerationRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MusicGenerationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: API key with Bearer prefix, e.g. "Bearer your_api_key"
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    BaseResponse:
+      type: object
+      properties:
+        status_code:
+          type: integer
+          description: Status code of the request
+        status_msg:
+          type: string
+          description: Status message
+      required:
+        - status_code
+        - status_msg
+
+    ErrorResponse:
+      type: object
+      properties:
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - base_resp
+
+    # Chat Completion API schemas
+    ChatCompletionRequest:
+      type: object
+      properties:
+        model:
+          type: string
+          enum: [MiniMax-Text-01, abab6.5s-chat, DeepSeek-R1]
+          description: The model to use for completion
+        messages:
+          type: array
+          description: A list of messages comprising the conversation
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        stream:
+          type: boolean
+          description: Whether to return the results in batches by streaming
+          default: false
+        max_tokens:
+          type: integer
+          description: Maximum number of tokens to generate
+          default: 256
+        temperature:
+          type: number
+          description: Sampling temperature between 0 and 1
+          default: 0.1
+          minimum: 0
+          maximum: 1
+        top_p:
+          type: number
+          description: Alternative to temperature, nucleus sampling
+          default: 0.95
+          minimum: 0
+          maximum: 1
+          exclusiveMinimum: true
+        mask_sensitive_info:
+          type: boolean
+          description: Mask private information in the output
+          default: false
+        tools:
+          type: array
+          description: A list of tools the model may call
+          items:
+            $ref: '#/components/schemas/Tool'
+        response_format:
+          $ref: '#/components/schemas/ResponseFormat'
+      required:
+        - model
+        - messages
+
+    ChatMessage:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant]
+          description: The role of the message author
+        content:
+          type: string
+          description: The content of the message
+        name:
+          type: string
+          description: The name of the author of this message
+      required:
+        - role
+        - content
+
+    Tool:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [function]
+          description: Type of tool
+        function:
+          $ref: '#/components/schemas/Function'
+      required:
+        - type
+        - function
+
+    Function:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the function
+        description:
+          type: string
+          description: A description of what the function does
+        parameters:
+          type: object
+          description: The parameters that the function accepts
+      required:
+        - name
+        - parameters
+
+    ResponseFormat:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [json_schema]
+          description: The format type
+        json_schema:
+          type: object
+          description: The JSON schema to match
+      required:
+        - type
+
+    ChatCompletionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the chat completion
+        choices:
+          type: array
+          description: A list of chat completion choices
+          items:
+            $ref: '#/components/schemas/ChatCompletionChoice'
+        created:
+          type: integer
+          description: The Unix timestamp of when the chat completion was created
+        model:
+          type: string
+          description: The model used for the chat completion
+        object:
+          type: string
+          enum: [chat.completion, chat.completion.chunk]
+          description: The object type
+        usage:
+          $ref: '#/components/schemas/Usage'
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - id
+        - choices
+        - created
+        - model
+        - object
+        - usage
+
+    ChatCompletionChoice:
+      type: object
+      properties:
+        finish_reason:
+          type: string
+          enum: [stop, length, content_filter, tool_calls, function_call]
+          description: The reason the generation stopped
+        index:
+          type: integer
+          description: The index of the choice
+        message:
+          $ref: '#/components/schemas/ChatMessage'
+      required:
+        - finish_reason
+        - index
+        - message
+
+    Usage:
+      type: object
+      properties:
+        total_tokens:
+          type: integer
+          description: Total number of tokens used in the request
+      required:
+        - total_tokens
+
+    # Image Generation API schemas
+    ImageGenerationRequest:
+      type: object
+      properties:
+        model:
+          type: string
+          enum: [image-01]
+          description: The model to use for image generation
+        prompt:
+          type: string
+          description: Description for the image to generate
+        aspect_ratio:
+          type: string
+          enum: [1:1, 16:9, 4:3, 3:2, 2:3, 3:4, 9:16, 21:9]
+          description: Controls the aspect ratio of the generated image
+          default: 1:1
+        response_format:
+          type: string
+          enum: [url, base64]
+          description: Output format of the generated image
+          default: url
+        seed:
+          type: integer
+          description: Random seed for generation
+        n:
+          type: integer
+          minimum: 1
+          maximum: 9
+          default: 1
+          description: Number of images to generate
+        prompt_optimizer:
+          type: boolean
+          default: false
+          description: Enable automatic prompt optimization
+      required:
+        - model
+        - prompt
+
+    ImageGenerationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the image generation
+        data:
+          type: object
+          properties:
+            image_urls:
+              type: array
+              items:
+                type: string
+              description: URLs of the generated images
+          required:
+            - image_urls
+        metadata:
+          type: object
+          properties:
+            failed_count:
+              type: string
+              description: Number of failed image generations
+            success_count:
+              type: string
+              description: Number of successful image generations
+          required:
+            - failed_count
+            - success_count
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - id
+        - data
+        - metadata
+        - base_resp
+
+    # Video Generation API schemas
+    VideoGenerationRequest:
+      type: object
+      properties:
+        model:
+          type: string
+          enum: [T2V-01-Director, I2V-01-Director, S2V-01, I2V-01, I2V-01-live, T2V-01]
+          description: ID of model to use
+        prompt:
+          type: string
+          description: Description of the video
+        prompt_optimizer:
+          type: boolean
+          default: true
+          description: Enable automatic prompt optimization
+        first_frame_image:
+          type: string
+          description: URL or base64 of the image to use as first frame
+        skip_frame_if_fps:
+          type: integer
+          description: The first frame step size to be processed from the original video
+        width:
+          type: integer
+          description: The width of the generated video
+        height:
+          type: integer
+          description: The height of the generated video
+        frames:
+          type: integer
+          description: The number of frames to generate
+        fps:
+          type: integer
+          description: Frames per second of the generated video
+        output_format:
+          type: string
+          enum: [mp4]
+          description: The output format of the generated video
+      required:
+        - model
+
+    VideoGenerationTaskResponse:
+      type: object
+      properties:
+        task_id:
+          type: string
+          description: The task ID of the video generation
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - task_id
+        - base_resp
+
+    VideoGenerationStatusResponse:
+      type: object
+      properties:
+        task_id:
+          type: string
+          description: The task ID being queried
+        status:
+          type: string
+          enum: [Queueing, Preparing, Processing, Success, Fail]
+          description: Current status of the task
+        file_id:
+          type: string
+          description: File ID of the generated video (when status is Success)
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - task_id
+        - status
+        - base_resp
+
+    # T2A (Text to Audio) API schemas
+    T2ARequest:
+      type: object
+      properties:
+        model:
+          type: string
+          enum: [speech-01-turbo, speech-01-hd]
+          description: The model to use for speech synthesis
+        text:
+          type: string
+          description: Text to be synthesized (max 5000 chars)
+        voice_setting:
+          $ref: '#/components/schemas/VoiceSetting'
+        audio_setting:
+          $ref: '#/components/schemas/AudioSetting'
+        pronunciation_dict:
+          type: array
+          items:
+            $ref: '#/components/schemas/PronunciationDict'
+          description: Custom pronunciation dictionary
+        timber_weights:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimberWeight'
+          description: Weighted voice mixing settings
+        stream:
+          type: boolean
+          default: false
+          description: Whether to return streaming audio
+        language_boost:
+          type: string
+          enum: [Chinese, Chinese,Yue, English, Arabic, Russian, Spanish, French, Portuguese, German, Turkish, Dutch, Ukrainian, Vietnamese, Indonesian, Japanese, Italian, Korean, auto]
+          description: Enhance recognition of specified languages and dialects
+        subtitle_enable:
+          type: boolean
+          default: false
+          description: Enable subtitle generation
+      required:
+        - model
+        - text
+
+    VoiceSetting:
+      type: object
+      properties:
+        voice_id:
+          type: string
+          description: ID of the voice to use
+        speed:
+          type: number
+          minimum: 0.5
+          maximum: 2.0
+          default: 1.0
+          description: Speaking speed, 0.5-2.0
+        vol:
+          type: number
+          minimum: 0.5
+          maximum: 2.0
+          default: 1.0
+          description: Volume, 0.5-2.0
+        pitch:
+          type: number
+          minimum: -12
+          maximum: 12
+          default: 0
+          description: Pitch adjustment, -12 to 12
+      required:
+        - voice_id
+
+    AudioSetting:
+      type: object
+      properties:
+        sample_rate:
+          type: integer
+          enum: [16000, 24000, 32000, 44100, 48000]
+          default: 24000
+          description: Audio sample rate in Hz
+        bitrate:
+          type: integer
+          enum: [32000, 64000, 128000, 192000, 256000, 320000]
+          default: 128000
+          description: Audio bitrate in bps
+        format:
+          type: string
+          enum: [mp3, pcm, wav, flac]
+          default: mp3
+          description: Audio format
+        channel:
+          type: integer
+          enum: [1, 2]
+          default: 1
+          description: Number of audio channels
+      required:
+        - sample_rate
+        - bitrate
+        - format
+
+    PronunciationDict:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [word, phoneme]
+          description: Type of pronunciation entry
+        source:
+          type: string
+          description: The word or phrase to be pronounced
+        target:
+          type: string
+          description: The target pronunciation
+      required:
+        - type
+        - source
+        - target
+
+    TimberWeight:
+      type: object
+      properties:
+        voice_id:
+          type: string
+          description: ID of the voice to mix
+        weight:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Weight of this voice in the mix
+      required:
+        - voice_id
+        - weight
+
+    T2AResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            audio:
+              type: string
+              description: Hex-encoded audio data
+            status:
+              type: integer
+              description: Status code
+          required:
+            - audio
+            - status
+        subtitle_file:
+          type: string
+          description: URL to download subtitle file
+        extra_info:
+          type: object
+          properties:
+            audio_length:
+              type: integer
+              description: Audio length in milliseconds
+            audio_sample_rate:
+              type: integer
+              description: Audio sample rate
+            audio_size:
+              type: integer
+              description: Audio size in bytes
+            audio_bitrate:
+              type: integer
+              description: Audio bitrate
+            word_count:
+              type: integer
+              description: Word count in the text
+            invisible_character_ratio:
+              type: number
+              description: Ratio of invisible characters
+            audio_format:
+              type: string
+              description: Audio format
+            usage_characters:
+              type: integer
+              description: Character count used for billing
+          required:
+            - audio_length
+            - audio_sample_rate
+            - audio_size
+            - audio_bitrate
+            - word_count
+            - invisible_character_ratio
+            - audio_format
+            - usage_characters
+        trace_id:
+          type: string
+          description: ID for tracking this request
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - data
+        - extra_info
+        - trace_id
+        - base_resp
+
+    # T2A Async API schemas
+    T2AAsyncRequest:
+      type: object
+      properties:
+        model:
+          type: string
+          enum: [speech-01-turbo]
+          description: Model ID
+        text:
+          type: string
+          description: Text to be synthesized
+        text_file_id:
+          type: integer
+          format: int64
+          description: File ID containing text to synthesize
+        voice_id:
+          type: string
+          description: ID of the voice to use
+        speed:
+          type: number
+          minimum: 0.5
+          maximum: 2.0
+          default: 1.0
+          description: Speaking speed
+        vol:
+          type: number
+          minimum: 0.5
+          maximum: 2.0
+          default: 1.0
+          description: Volume
+        pitch:
+          type: number
+          minimum: -12
+          maximum: 12
+          default: 0
+          description: Pitch adjustment
+        timber_weights:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimberWeight'
+          description: Voice mixing weights
+        language_boost:
+          type: string
+          description: Enhance specific language recognition
+        subtitle_enable:
+          type: boolean
+          description: Enable subtitle generation
+        need_alignment:
+          type: boolean
+          description: Enable word-level alignment
+        sample_rate:
+          type: integer
+          description: Audio sample rate
+        bitrate:
+          type: integer
+          description: Audio bitrate
+        format:
+          type: string
+          description: Audio format
+        channel:
+          type: integer
+          description: Number of audio channels
+      required:
+        - model
+
+    T2AAsyncResponse:
+      type: object
+      properties:
+        task_id:
+          type: integer
+          format: int64
+          description: The ID of the task
+        task_token:
+          type: string
+          description: Task authentication token
+        file_id:
+          type: integer
+          format: int64
+          description: File ID for the generated audio
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - task_id
+        - task_token
+        - file_id
+        - base_resp
+
+    T2AAsyncStatusResponse:
+      type: object
+      properties:
+        task_id:
+          type: integer
+          format: int64
+          description: The ID of the task
+        status:
+          type: string
+          enum: [Processing, Success, Failed, Expired]
+          description: Current status of the task
+        file_id:
+          type: integer
+          format: int64
+          description: File ID of the generated audio
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - task_id
+        - status
+        - base_resp
+
+    # File API schemas
+    FileUploadResponse:
+      type: object
+      properties:
+        file:
+          type: object
+          properties:
+            file_id:
+              type: string
+              description: The unique identifier of the uploaded file
+            bytes:
+              type: integer
+              format: int64
+              description: Size of the file in bytes
+            created_at:
+              type: integer
+              format: int64
+              description: Unix timestamp of file creation
+            filename:
+              type: string
+              description: Name of the file
+            purpose:
+              type: string
+              description: Purpose of the file
+          required:
+            - file_id
+            - bytes
+            - created_at
+            - filename
+            - purpose
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - file
+        - base_resp
+
+    FileRetrieveResponse:
+      type: object
+      properties:
+        file:
+          type: object
+          properties:
+            file_id:
+              type: string
+              description: The unique identifier of the file
+            bytes:
+              type: integer
+              format: int64
+              description: Size of the file in bytes
+            created_at:
+              type: integer
+              format: int64
+              description: Unix timestamp of file creation
+            filename:
+              type: string
+              description: Name of the file
+            purpose:
+              type: string
+              description: Purpose of the file
+            download_url:
+              type: string
+              description: URL to download the file
+          required:
+            - file_id
+            - bytes
+            - created_at
+            - filename
+            - purpose
+            - download_url
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - file
+        - base_resp
+
+    # Voice Clone API schemas
+    VoiceCloneRequest:
+      type: object
+      properties:
+        file_id:
+          type: integer
+          format: int64
+          description: ID of the file to be cloned
+        voice_id:
+          type: string
+          description: Custom user-defined ID for the cloned voice
+        noise_reduction:
+          type: boolean
+          default: false
+          description: Enable noise reduction
+        text:
+          type: string
+          description: Text for preview of the cloned voice
+        model:
+          type: string
+          enum: [speech-01-turbo, speech-01-hd]
+          description: TTS model for preview
+        accuracy:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.7
+          description: Text validation accuracy threshold
+        need_volume_normalization:
+          type: boolean
+          default: false
+          description: Enable volume normalization
+      required:
+        - file_id
+        - voice_id
+
+    VoiceCloneResponse:
+      type: object
+      properties:
+        input_sensitive:
+          type: boolean
+          description: Whether the input audio triggered any errors
+        input_sensitive_type:
+          type: integer
+          description: Type of sensitivity issue
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - input_sensitive
+        - input_sensitive_type
+        - base_resp
+
+    # Music API schemas
+    MusicUploadRequest:
+      type: object
+      properties:
+        purpose:
+          type: string
+          enum: [song, voice, instrumental]
+          description: Purpose of the uploaded file
+        file:
+          type: string
+          description: Path to the audio file
+      required:
+        - purpose
+        - file
+
+    MusicUploadResponse:
+      type: object
+      properties:
+        voice_id:
+          type: string
+          description: Voice ID for acapella reference
+        instrumental_id:
+          type: string
+          description: Instrumental ID for accompaniment reference
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - base_resp
+
+    MusicGenerationRequest:
+      type: object
+      properties:
+        refer_voice:
+          type: string
+          description: Voice ID for reference
+        refer_instrumental:
+          type: string
+          description: Instrumental ID for reference
+        lyrics:
+          type: string
+          description: Lyrics for the generated music
+        model:
+          type: string
+          enum: [music-01]
+          description: Music generation model
+        audio_setting:
+          type: object
+          properties:
+            sample_rate:
+              type: integer
+              description: Audio sample rate
+            bitrate:
+              type: integer
+              description: Audio bitrate
+            format:
+              type: string
+              description: Audio format
+          required:
+            - sample_rate
+            - bitrate
+            - format
+      required:
+        - lyrics
+        - model
+
+    MusicGenerationResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            audio:
+              type: string
+              description: Hex-encoded audio data
+            status:
+              type: integer
+              description: Status code
+          required:
+            - audio
+            - status
+        trace_id:
+          type: string
+          description: Request trace ID
+        base_resp:
+          $ref: '#/components/schemas/BaseResponse'
+      required:
+        - data
+        - trace_id
+        - base_resp 

@@ -4,6 +4,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KlingAI", "KlingAI\KlingAI.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KlingAIExample", "KlingAIExample\KlingAIExample.csproj", "{BA6DEB0D-0DFC-45CD-BD5A-FE35774C1855}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Minimax", "Minimax\Minimax.csproj", "{6A7E8646-8B51-4E03-8125-5DFBFA53B265}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimaxExample", "MinimaxExample\MinimaxExample.csproj", "{4AF4079A-A027-4BDE-8CE2-868C5FC1DBD4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +22,13 @@ Global
 		{BA6DEB0D-0DFC-45CD-BD5A-FE35774C1855}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA6DEB0D-0DFC-45CD-BD5A-FE35774C1855}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA6DEB0D-0DFC-45CD-BD5A-FE35774C1855}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A7E8646-8B51-4E03-8125-5DFBFA53B265}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A7E8646-8B51-4E03-8125-5DFBFA53B265}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A7E8646-8B51-4E03-8125-5DFBFA53B265}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A7E8646-8B51-4E03-8125-5DFBFA53B265}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4AF4079A-A027-4BDE-8CE2-868C5FC1DBD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4AF4079A-A027-4BDE-8CE2-868C5FC1DBD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4AF4079A-A027-4BDE-8CE2-868C5FC1DBD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4AF4079A-A027-4BDE-8CE2-868C5FC1DBD4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
