@@ -210,13 +210,20 @@ namespace MiniMax.Client
             var content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync(endpoint, content);
             
-            if (!response.IsSuccessStatusCode)
+            var responseContent = await response.Content.ReadAsStringAsync();
+            
+            // Check for API errors even if HTTP status is 200
+            var apiError = CheckForApiError(responseContent);
+            if (apiError != null)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                throw new MiniMaxApiException($"API error: {response.StatusCode} - {errorContent}");
+                throw apiError;
             }
             
-            var responseContent = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw CreateApiException(response.StatusCode, responseContent);
+            }
+            
             return JsonSerializer.Deserialize<T>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
         }
 
@@ -224,19 +231,175 @@ namespace MiniMax.Client
         {
             var response = await _httpClient.GetAsync(endpoint);
             
-            if (!response.IsSuccessStatusCode)
+            var responseContent = await response.Content.ReadAsStringAsync();
+            
+            // Check for API errors even if HTTP status is 200
+            var apiError = CheckForApiError(responseContent);
+            if (apiError != null)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                throw new MiniMaxApiException($"API error: {response.StatusCode} - {errorContent}");
+                throw apiError;
             }
             
-            var responseContent = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                throw CreateApiException(response.StatusCode, responseContent);
+            }
+            
             return JsonSerializer.Deserialize<T>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        private MiniMaxApiException CheckForApiError(string responseContent)
+        {
+            try
+            {
+                // Try to parse the base_resp error from the response
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var responseObj = JsonSerializer.Deserialize<JsonElement>(responseContent, options);
+                
+                if (responseObj.TryGetProperty("base_resp", out var baseResp))
+                {
+                    if (baseResp.TryGetProperty("status_code", out var statusCode) && 
+                        statusCode.GetInt32() != 0)
+                    {
+                        var errorCode = statusCode.GetInt32();
+                        var errorMessage = baseResp.TryGetProperty("status_msg", out var statusMsg) 
+                            ? statusMsg.GetString() 
+                            : "Unknown error";
+                        
+                        return new MiniMaxApiException(
+                            errorCode,
+                            errorMessage,
+                            GetSolutionForErrorCode(errorCode),
+                            System.Net.HttpStatusCode.OK, // The HTTP status was actually 200
+                            responseContent
+                        );
+                    }
+                }
+                
+                return null; // No error found
+            }
+            catch (JsonException)
+            {
+                return null; // If we can't parse the JSON, assume no error
+            }
+        }
+
+        private MiniMaxApiException CreateApiException(System.Net.HttpStatusCode statusCode, string errorContent)
+        {
+            try
+            {
+                // First check for base_resp error format
+                var apiError = CheckForApiError(errorContent);
+                if (apiError != null)
+                {
+                    return apiError;
+                }
+                
+                // Try other error format as fallback
+                var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(errorContent);
+                if (errorResponse?.Error != null)
+                {
+                    return new MiniMaxApiException(
+                        errorResponse.Error.Code,
+                        errorResponse.Error.Message,
+                        GetSolutionForErrorCode(errorResponse.Error.Code),
+                        statusCode,
+                        errorContent
+                    );
+                }
+            }
+            catch (JsonException)
+            {
+                // If we can't parse the error, just continue to fallback
+            }
+            
+            // Fallback for unparseable responses
+            return new MiniMaxApiException(
+                0, // Unknown code
+                $"API error: {statusCode}",
+                "Please retry your requests later.",
+                statusCode,
+                errorContent
+            );
+        }
+
+        private string GetSolutionForErrorCode(int code)
+        {
+            return code switch
+            {
+                1000 => "Please retry your requests later.",
+                1001 => "Please retry your requests later.",
+                1002 => "Please retry your requests later.",
+                1004 => "Please check your api key and make sure it is correct and active.",
+                1008 => "Please check your account balance.",
+                1024 => "Please retry your requests later.",
+                1026 => "Please change your input content.",
+                1027 => "Please change your input content.",
+                1033 => "Please retry your requests later.",
+                1039 => "Please retry your requests later.",
+                1041 => "Please contact us if the issue persists.",
+                1042 => "Please check your input content for invisible or illegal characters.",
+                1043 => "Please check file_id and text_validation.",
+                1044 => "Please check clone prompt audio and prompt words.",
+                2013 => "Please check the request parameters.",
+                20132 => "Please check your file_id (in Voice Cloning API), voice_id (in T2A v2 API, T2A Large v2 API) and contact us if the issue persists.",
+                2037 => "Please adjust the duration of your file_id for voice clone.",
+                2039 => "Please check the voice_id to ensure no duplication with the existing ones.",
+                2042 => "Please check whether you are the creator of this voice_id and contact us if the issue persists.",
+                2045 => "Please avoid sudden increases and decreases in requests.",
+                2048 => "Please adjust the duration of the prompt_audio file (<8s).",
+                2049 => "Please check your api key and make sure it is correct and active.",
+                _ => "Please retry your requests later or contact MiniMax support if the issue persists."
+            };
         }
     }
 
     public class MiniMaxApiException : Exception
     {
-        public MiniMaxApiException(string message) : base(message) { }
+        /// <summary>
+        /// The MiniMax API error code
+        /// </summary>
+        public int ErrorCode { get; }
+        
+        /// <summary>
+        /// The HTTP status code returned by the API
+        /// </summary>
+        public System.Net.HttpStatusCode StatusCode { get; }
+        
+        /// <summary>
+        /// The raw error content returned by the API
+        /// </summary>
+        public string ErrorContent { get; }
+        
+        /// <summary>
+        /// Suggested solution for this error code
+        /// </summary>
+        public string Solution { get; }
+
+        public MiniMaxApiException(int errorCode, string message, string solution, System.Net.HttpStatusCode statusCode, string errorContent) 
+            : base(message)
+        {
+            ErrorCode = errorCode;
+            Solution = solution;
+            StatusCode = statusCode;
+            ErrorContent = errorContent;
+        }
+        
+        public MiniMaxApiException(string message) : base(message)
+        {
+            Solution = "Please retry your requests later or contact MiniMax support if the issue persists.";
+        }
+    }
+
+    // Models for error response parsing
+    public class ErrorResponse
+    {
+        public ErrorDetails Error { get; set; }
+    }
+
+    public class ErrorDetails
+    {
+        public int Code { get; set; }
+        public string Message { get; set; }
     }
 } 
