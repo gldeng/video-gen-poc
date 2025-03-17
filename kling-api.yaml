@@ -1,0 +1,968 @@
+openapi: 3.0.0
+info:
+  title: Kling AI API
+  description: API for Kling AI services including image generation, video generation, virtual try-on, and account information querying.
+  version: 1.0.0
+servers:
+  - url: https://api.klingai.com
+    description: Main API server
+paths:
+  /v1/images/generations:
+    post:
+      summary: Create an image generation task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_name:
+                  type: string
+                  enum: [kling-v1]
+                  default: kling-v1
+                prompt:
+                  type: string
+                  maxLength: 500
+                negative_prompt:
+                  type: string
+                  maxLength: 200
+                image:
+                  type: string
+                image_fidelity:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  default: 0.5
+                n:
+                  type: integer
+                  minimum: 1
+                  maximum: 9
+                  default: 1
+                aspect_ratio:
+                  type: string
+                  enum: ["16:9", "9:16", "1:1", "4:3", "3:4", "3:2", "2:3"]
+                  default: "16:9"
+                callback_url:
+                  type: string
+              required:
+                - prompt
+      responses:
+        '200':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+    get:
+      summary: Query image generation tasks (list)
+      parameters:
+        - name: pageNum
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 30
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskListResponse'
+  /v1/images/generations/{id}:
+    get:
+      summary: Query a single image generation task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetailResponse'
+  /v1/videos/text2video:
+    post:
+      summary: Create a text-to-video task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_name:
+                  type: string
+                  enum: [kling-v1, kling-v1-6]
+                  default: kling-v1
+                prompt:
+                  type: string
+                  maxLength: 2500
+                negative_prompt:
+                  type: string
+                  maxLength: 2500
+                cfg_scale:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  default: 0.5
+                mode:
+                  type: string
+                  enum: [std, pro]
+                  default: std
+                camera_control:
+                  $ref: '#/components/schemas/CameraControl'
+                aspect_ratio:
+                  type: string
+                  enum: ["16:9", "9:16", "1:1"]
+                  default: "16:9"
+                duration:
+                  type: string
+                  enum: ["5", "10"]
+                  default: "5"
+                callback_url:
+                  type: string
+                external_task_id:
+                  type: string
+              required:
+                - prompt
+      responses:
+        '200':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+    get:
+      summary: Query text-to-video tasks (list)
+      parameters:
+        - name: pageNum
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 30
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoTaskListResponse'
+  /v1/videos/text2video/{id}:
+    get:
+      summary: Query a single text-to-video task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoTaskDetailResponse'
+  /v1/videos/image2video:
+    post:
+      summary: Create an image-to-video task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_name:
+                  type: string
+                  enum: [kling-v1, kling-v1-5, kling-v1-6]
+                  default: kling-v1
+                image:
+                  type: string
+                image_tail:
+                  type: string
+                prompt:
+                  type: string
+                  maxLength: 2500
+                negative_prompt:
+                  type: string
+                  maxLength: 2500
+                cfg_scale:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  default: 0.5
+                mode:
+                  type: string
+                  enum: [std, pro]
+                  default: std
+                static_mask:
+                  type: string
+                dynamic_masks:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      mask:
+                        type: string
+                      trajectories:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            x:
+                              type: integer
+                            y:
+                              type: integer
+                          required: [x, y]
+                        minItems: 2
+                        maxItems: 77
+                    required: [mask, trajectories]
+                  maxItems: 6
+                camera_control:
+                  $ref: '#/components/schemas/CameraControl'
+                duration:
+                  type: string
+                  enum: ["5", "10"]
+                  default: "5"
+                callback_url:
+                  type: string
+                external_task_id:
+                  type: string
+              anyOf:
+                - required: [image]
+                - required: [image_tail]
+      responses:
+        '200':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+    get:
+      summary: Query image-to-video tasks (list)
+      parameters:
+        - name: pageNum
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 30
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoTaskListResponse'
+  /v1/videos/image2video/{id}:
+    get:
+      summary: Query a single image-to-video task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoTaskDetailResponse'
+  /v1/videos/video-extend:
+    post:
+      summary: Create a video extension task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                video_id:
+                  type: string
+                prompt:
+                  type: string
+                  maxLength: 2500
+                callback_url:
+                  type: string
+              required:
+                - video_id
+      responses:
+        '200':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+    get:
+      summary: Query video extension tasks (list)
+      parameters:
+        - name: pageNum
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 30
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoExtendTaskListResponse'
+  /v1/videos/video-extend/{id}:
+    get:
+      summary: Query a single video extension task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoExtendTaskDetailResponse'
+  /v1/videos/lip-sync:
+    post:
+      summary: Create a lip-sync task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input:
+                  type: object
+                  properties:
+                    video_id:
+                      type: string
+                    mode:
+                      type: string
+                      enum: [text2video, audio2video]
+                    text:
+                      type: string
+                      maxLength: 120
+                    voice_id:
+                      type: string
+                    voice_language:
+                      type: string
+                      enum: [zh, en]
+                      default: zh
+                    voice_speed:
+                      type: number
+                      minimum: 0.8
+                      maximum: 2.0
+                      default: 1.0
+                    audio_type:
+                      type: string
+                      enum: [file, url]
+                    audio_file:
+                      type: string
+                    audio_url:
+                      type: string
+                  required:
+                    - video_id
+                    - mode
+                  oneOf:
+                    - required: [text, voice_id, voice_language]
+                    - required: [audio_type]
+                callback_url:
+                  type: string
+      responses:
+        '200':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+    get:
+      summary: Query lip-sync tasks (list)
+      parameters:
+        - name: pageNum
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 30
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoExtendTaskListResponse'
+  /v1/videos/lip-sync/{id}:
+    get:
+      summary: Query a single lip-sync task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoExtendTaskDetailResponse'
+  /v1/videos/effects:
+    post:
+      summary: Create a video effects task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                effect_scene:
+                  type: string
+                  enum: [squish, expansion, hug, kiss, heart_gesture]
+                input:
+                  type: object
+                  oneOf:
+                    - $ref: '#/components/schemas/SingleImageEffectInput'
+                    - $ref: '#/components/schemas/DualCharacterEffectInput'
+                callback_url:
+                  type: string
+                external_task_id:
+                  type: string
+              required:
+                - effect_scene
+                - input
+      responses:
+        '200':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+    get:
+      summary: Query video effects tasks (list)
+      parameters:
+        - name: pageNum
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 30
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoTaskListResponse'
+  /v1/videos/effects/{id}:
+    get:
+      summary: Query a single video effects task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoTaskDetailResponse'
+  /v1/images/kolors-virtual-try-on:
+    post:
+      summary: Create a virtual try-on task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_name:
+                  type: string
+                  enum: [kolors-virtual-try-on-v1, kolors-virtual-try-on-v1-5]
+                  default: kolors-virtual-try-on-v1
+                human_image:
+                  type: string
+                cloth_image:
+                  type: string
+                callback_url:
+                  type: string
+              required:
+                - human_image
+      responses:
+        '200':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResponse'
+    get:
+      summary: Query virtual try-on tasks (list)
+      parameters:
+        - name: pageNum
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 30
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskListResponse'
+  /v1/images/kolors-virtual-try-on/{id}:
+    get:
+      summary: Query a single virtual try-on task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetailResponse'
+  /account/costs:
+    get:
+      summary: Query resource package list and remaining quantity
+      parameters:
+        - name: start_time
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: end_time
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: resource_pack_name
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Resource package information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountCostsResponse'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    TaskResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        request_id:
+          type: string
+        data:
+          type: object
+          properties:
+            task_id:
+              type: string
+            task_status:
+              type: string
+              enum: [submitted, processing, succeed, failed]
+            task_info:
+              type: object
+              properties:
+                external_task_id:
+                  type: string
+            created_at:
+              type: integer
+            updated_at:
+              type: integer
+      required: [code, message, request_id, data]
+    TaskListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        request_id:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskDetail'
+      required: [code, message, request_id, data]
+    TaskDetailResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        request_id:
+          type: string
+        data:
+          $ref: '#/components/schemas/TaskDetail'
+      required: [code, message, request_id, data]
+    TaskDetail:
+      type: object
+      properties:
+        task_id:
+          type: string
+        task_status:
+          type: string
+          enum: [submitted, processing, succeed, failed]
+        task_status_msg:
+          type: string
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+        task_result:
+          type: object
+          properties:
+            images:
+              type: array
+              items:
+                type: object
+                properties:
+                  index:
+                    type: integer
+                  url:
+                    type: string
+                required: [index, url]
+      required: [task_id, task_status, created_at, updated_at]
+    VideoTaskListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        request_id:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoTaskDetail'
+      required: [code, message, request_id, data]
+    VideoTaskDetailResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        request_id:
+          type: string
+        data:
+          $ref: '#/components/schemas/VideoTaskDetail'
+      required: [code, message, request_id, data]
+    VideoTaskDetail:
+      type: object
+      properties:
+        task_id:
+          type: string
+        task_status:
+          type: string
+          enum: [submitted, processing, succeed, failed]
+        task_status_msg:
+          type: string
+        task_info:
+          type: object
+          properties:
+            external_task_id:
+              type: string
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+        task_result:
+          type: object
+          properties:
+            videos:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  url:
+                    type: string
+                  duration:
+                    type: string
+                required: [id, url, duration]
+      required: [task_id, task_status, created_at, updated_at]
+    VideoExtendTaskListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        request_id:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideoExtendTaskDetail'
+      required: [code, message, request_id, data]
+    VideoExtendTaskDetailResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        request_id:
+          type: string
+        data:
+          $ref: '#/components/schemas/VideoExtendTaskDetail'
+      required: [code, message, request_id, data]
+    VideoExtendTaskDetail:
+      type: object
+      properties:
+        task_id:
+          type: string
+        task_status:
+          type: string
+          enum: [submitted, processing, succeed, failed]
+        task_status_msg:
+          type: string
+        task_info:
+          type: object
+          properties:
+            parent_video:
+              type: object
+              properties:
+                id:
+                  type: string
+                url:
+                  type: string
+                duration:
+                  type: string
+              required: [id, url, duration]
+        task_result:
+          type: object
+          properties:
+            videos:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  url:
+                    type: string
+                  duration:
+                    type: string
+                required: [id, url, duration]
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+      required: [task_id, task_status, created_at, updated_at]
+    CameraControl:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [simple, down_back, forward_up, right_turn_forward, left_turn_forward]
+        config:
+          type: object
+          properties:
+            horizontal:
+              type: number
+              minimum: -10
+              maximum: 10
+            vertical:
+              type: number
+              minimum: -10
+              maximum: 10
+            pan:
+              type: number
+              minimum: -10
+              maximum: 10
+            tilt:
+              type: number
+              minimum: -10
+              maximum: 10
+            roll:
+              type: number
+              minimum: -10
+              maximum: 10
+            zoom:
+              type: number
+              minimum: -10
+              maximum: 10
+    SingleImageEffectInput:
+      type: object
+      properties:
+        model_name:
+          type: string
+          enum: [kling-v1-6]
+        image:
+          type: string
+        duration:
+          type: string
+          enum: ["5"]
+      required: [model_name, image, duration]
+    DualCharacterEffectInput:
+      type: object
+      properties:
+        model_name:
+          type: string
+          enum: [kling-v1, kling-v1-5, kling-v1-6]
+          default: kling-v1
+        mode:
+          type: string
+          enum: [std, pro]
+          default: std
+        images:
+          type: array
+          items:
+            type: string
+          minItems: 2
+          maxItems: 2
+        duration:
+          type: string
+          enum: ["5", "10"]
+      required: [images, duration]
+    AccountCostsResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        request_id:
+          type: string
+        data:
+          type: object
+          properties:
+            code:
+              type: integer
+            msg:
+              type: string
+            resource_pack_subscribe_infos:
+              type: array
+              items:
+                type: object
+                properties:
+                  resource_pack_name:
+                    type: string
+                  resource_pack_id:
+                    type: string
+                  resource_pack_type:
+                    type: string
+                    enum: [decreasing_total, constant_period]
+                  total_quantity:
+                    type: number
+                  remaining_quantity:
+                    type: number
+                  purchase_time:
+                    type: integer
+                  effective_time:
+                    type: integer
+                  invalid_time:
+                    type: integer
+                  status:
+                    type: string
+                    enum: [toBeOnline, online, expired, runOut]
+                required:
+                  - resource_pack_name
+                  - resource_pack_id
+                  - resource_pack_type
+                  - total_quantity
+                  - remaining_quantity
+                  - purchase_time
+                  - effective_time
+                  - invalid_time
+                  - status
+      required: [code, message, request_id, data]
+security:
+  - BearerAuth: []
