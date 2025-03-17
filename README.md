@@ -16,8 +16,8 @@ This repository contains example projects for interacting with various AI APIs:
 ### 1. Clone the repository
 
 ```
-git clone [repository-url]
-cd [repository-directory]
+git clone https://github.com/gldeng/video-gen-poc.git
+cd video-gen-poc
 ```
 
 ### 2. Set up environment variables
